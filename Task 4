@@ -1,0 +1,56 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import folium
+from folium.plugins import HeatMap
+
+
+data = pd.read_csv('traffic.csv')
+print(data.head())
+
+
+data['date'] = pd.to_datetime(data['date'])
+data['time'] = pd.to_datetime(data['time'], format='%H:%M').dt.hour  
+
+data['day_of_week'] = data['date'].dt.dayofweek  
+data['month'] = data['date'].dt.month  
+
+weather_accidents = data.groupby('weather_condition').size().sort_values(ascending=False)
+
+road_condition_accidents = data.groupby('road_condition').size().sort_values(ascending=False)
+
+hourly_accidents = data.groupby('time').size()
+
+
+# Accidents by Weather condition
+
+sns.barplot(x=weather_accidents.index, y=weather_accidents.values)
+plt.title('Accidents by Weather Condition')
+plt.xlabel('Weather Condition')
+plt.ylabel('Number of Accidents')
+plt.show()
+
+#  Accidents by Road condition
+
+sns.barplot(x=road_condition_accidents.index, y=road_condition_accidents.values)
+plt.title('Accidents by Road Condition')
+plt.xlabel('Road Condition')
+plt.ylabel('Number of Accidents')
+plt.show()
+
+# Accident by Hours
+
+sns.lineplot(x=hourly_accidents.index, y=hourly_accidents.values)
+plt.title('Accidents by Hour of Day')
+plt.xlabel('Hour of Day')
+plt.ylabel('Number of Accidents')
+plt.show()
+
+# Visualize Accident Hotspots
+map_center = [data['latitude'].mean(), data['longitude'].mean()]
+accident_map = folium.Map(location=map_center, zoom_start=12)
+heat_data = [[row['latitude'], row['longitude']] for index, row in data.iterrows()]
+HeatMap(heat_data).add_to(accident_map)
+
+accident_map.save('accident_hotspots_map.html')
+accident_map
